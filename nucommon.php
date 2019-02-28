@@ -95,7 +95,11 @@ class nuSqlString{
         $where_string     = stristr($sql, ' where ');
         $groupBy_string   = stristr($sql, ' group by ');
         $having_string    = stristr($sql, ' having ');
-        $orderBy_string   = stristr($sql, ' order by ');
+	$orderBy_string   = stristr($sql, ' order by ');
+
+	$select	= str_replace($from_string,'',$select_string);
+	$select = str_ireplace('select','',$select);
+	$select = trim($select);
 
         $from             = str_replace($where_string,   '', $from_string);
         $from             = str_replace($groupBy_string, '', $from);
@@ -111,7 +115,11 @@ class nuSqlString{
         
         $having           = str_replace($orderBy_string, '', $having_string);
         
-        $orderBy          = $orderBy_string;
+	$orderBy          = $orderBy_string;
+
+
+	$this->select =  $select;
+
         $this->from       = $from;
         $this->where      = $where == '' ? 'WHERE 1' : $where;
         $this->groupBy    = $groupBy;

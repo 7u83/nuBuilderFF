@@ -852,9 +852,15 @@ function nuBrowseRows($f){
     $S 				= new nuSqlString(nuReplaceHashVariables($r->sfo_browse_sql));
 
 	$S->addField($f->primary_key);
-	
-	for($i = 0 ; $i < count($f->browse_columns) ; $i++){
-		$S->addField($f->browse_columns[$i]->display);
+
+	if ($S->select=='*'){	
+
+		for($i = 0 ; $i < count($f->browse_columns) ; $i++){
+			$S->addField($f->browse_columns[$i]->display);
+		}
+	}
+	else {
+		$S->addField($S->select);
 	}
 	
 	$flds			= array();
