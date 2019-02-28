@@ -849,22 +849,25 @@ function nuBrowseRows($f){
 		return array(array(), 0);
 	}
 	
-    $S 				= new nuSqlString(nuReplaceHashVariables($r->sfo_browse_sql));
+	$S = new nuSqlString(nuReplaceHashVariables($r->sfo_browse_sql));
 
+	$sfields = array();
 	$S->addField($f->primary_key);
+	$sfields[]=$f->primary_key; 
 
-	if ($S->select=='*'){	
 
-		for($i = 0 ; $i < count($f->browse_columns) ; $i++){
+	for($i = 0 ; $i < count($f->browse_columns) ; $i++){
+		if ($S->select=='*'){	
 			$S->addField($f->browse_columns[$i]->display);
 		}
+		$sfields[]=$f->browse_columns[$i]->display; 
 	}
-	else {
+	if ($S->select!='*'){	
 		$S->addField($S->select);
 	}
 	
 	$flds			= array();
-	$fields 		= array_slice($S->fields,1);
+	$fields 		= array_slice($sfields,1);
 	
 	if(count($_POST['nuSTATE']['nosearch_columns']) == 0){
 		$_POST['nuSTATE']['nosearch_columns']	= array();
@@ -889,7 +892,7 @@ function nuBrowseRows($f){
 	if(!$haslike 	&& $haswhere){	$S->setWhere(" $hardwhere AND $where");}
 	
 	if($P['sort'] != '-1'){
-		$S->setOrderBy(' ORDER BY ' . $S->fields[$P['sort'] + 1] . ' ' . $P['sort_direction']);
+		$S->setOrderBy(' ORDER BY ' . $sfields[$P['sort'] + 1] . ' ' . $P['sort_direction']);
 	}
 	
 	$a				= array();
