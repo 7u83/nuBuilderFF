@@ -24,6 +24,7 @@ class nubuilder_session_data {
 	'WP_SITE_URL'		=> '',
 	'JQ_PATH'		=> '',
 	'WP_BLOG_CHARSET'	=> 'UTF-8',
+	'LDAP_DATA'		=> null,
 	'SESSION_ID'		=> null,
 	'SESSION_TIMESTAMP'	=> null,
 	'IsDemo'		=> null,
@@ -76,6 +77,9 @@ class nubuilder_session_data {
 		$this->nubuilder['GLOBEADMIN_PASS']	= $nuConfigDBGlobeadminPassword;
 		$this->nubuilder['IS_DEMO']         	= $nuConfigIsDemo;
 		$this->nubuilder['JQ_PATH']          	= 'jquery/jquery.js';
+
+		global $nuConfigLdapData;
+		$this->nubuilder['LDAP_DATA']		= $nuConfigLdapData;
         }
 }
 

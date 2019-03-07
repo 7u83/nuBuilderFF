@@ -36,9 +36,89 @@ function nuCheckStandaloneGlobeadminLoginRequest() {
 	return false;
 }
 
+
+function nuLdapLogin($ldata,$username,$password)
+{
+
+	$connect = ldap_connect($ldata->server, $ldata->port);
+	if (!$connect){
+		echo "Can't connect to LDAP server<br>";
+		return false;
+	}
+	
+
+	ldap_set_option($connect, LDAP_OPT_PROTOCOL_VERSION, 3);
+	ldap_set_option($connect, LDAP_OPT_REFERRALS, 0);
+
+
+	$bind = ldap_bind($connect, $ldata->binddn, $ldata->bindpw);
+	if (!$bind){
+		echo "LDAP bind failed for: $ldata->binddn<br>";
+		return false;
+	}
+	
+	$filter = str_replace("-USER-",$username,$ldata->search);
+
+	$rc = ldap_search($connect,$ldata->base, $filter);
+	if (!$rc){
+   	        echo "LDAP error searching for: $filter<br>";
+                return false;
+	}
+
+	$e = ldap_get_entries($connect,$rc);
+	if ($e['count']!=1){
+   	        echo "LDAP error searching for: $filter, count <> 1 <br>";
+                return false;
+	}
+
+	$userdn = $e[0]['dn'];
+
+	$bind = ldap_bind($connect, $userdn, $password);
+	if (!$bind){
+		return false;
+	}
+	
+	
+	
+	
+	ldap_close($connect);
+	return true;
+	
+}
+
+
+
 //Check for Standlone User login
 function nuCheckStandaloneUserLoginRequest() {
 
+	global $nuConfigLdapData;
+
+	if ($nuConfigLdapData != null){ // perform login with ldap
+
+		$ldata = (object)$nuConfigLdapData;
+
+		// frst find the user in out DB
+		$sql = "SELECT * FROM zzzzsys_user JOIN zzzzsys_access ON zzzzsys_access_id = sus_zzzzsys_access_id WHERE sus_login_name = ? ";
+		$rs = nuRunQuery($sql, array($_POST['nuSTATE']['username']));
+
+
+		if (db_num_rows($rs) <= 0){
+			// user not found
+			return false;
+		}
+		
+		
+//		return true;
+
+
+		return  nuLdapLogin($ldata,$_POST['nuSTATE']['username'],$_POST['nuSTATE']['password']);
+	}
+
+
+
+
+
+	/* perform classic login */
 	$sql 	= "SELECT * FROM zzzzsys_user JOIN zzzzsys_access ON zzzzsys_access_id = sus_zzzzsys_access_id WHERE sus_login_name = ? AND sus_login_password = ? ";
         $rs 	= nuRunQuery($sql, array($_POST['nuSTATE']['username'], md5($_POST['nuSTATE']['password'])));
 
@@ -112,7 +192,7 @@ function nuLoginSetupNOTGlobeadmin($standalone = true) {
 	$_SESSION['nubuilder_session_data']['SESSION_ID']         	= nuIDTEMP();
         $_SESSION['nubuilder_session_data']['SESSION_TIMESTAMP']  	= time();
         $_SESSION['nubuilder_session_data']['IsDemo']             	= $_SESSION['nubuilder_session_data']['IS_DEMO'];
-	$checkLoginDetailsSQL 						= "SELECT * FROM zzzzsys_user JOIN zzzzsys_access ON zzzzsys_access_id = sus_zzzzsys_access_id WHERE sus_login_name = ? AND sus_login_password = ? ";
+	$checkLoginDetailsSQL 						= "SELECT * FROM zzzzsys_user JOIN zzzzsys_access ON zzzzsys_access_id = sus_zzzzsys_access_id WHERE sus_login_name = ? "; // AND sus_login_password = ? ";
 	
 	if ( $standalone ) {
 		$this_username 						= $_POST['nuSTATE']['username'];
@@ -122,7 +202,7 @@ function nuLoginSetupNOTGlobeadmin($standalone = true) {
                 $this_password 						= $_SESSION['nubuilder_session_data']['USER_PASS']; // no need to md5 as it is already done 
 	}
 
-	$checkLoginDetailsValues 					= array($this_username, $this_password);
+	$checkLoginDetailsValues 					= array($this_username); //, $this_password);
 	$checkLoginDetailsQRY 						= nuRunQuery($checkLoginDetailsSQL, $checkLoginDetailsValues);
 	$checkLoginDetailsOBJ 						= db_fetch_object($checkLoginDetailsQRY);
 	$_SESSION['nubuilder_session_data']['translation'] 		= nuGetTranslation($checkLoginDetailsOBJ->sus_language);
